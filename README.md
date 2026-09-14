@@ -156,13 +156,18 @@ Real-Estate-CRM/
 │   │   │   ├── leads.html           # Lead Engine dashboard
 │   │   │   ├── events.html          # Corporate Calendar
 │   │   │   └── assets/              # Styles, JS modules, icons
-│   │   ├── models.py          # SQLAlchemy models (User, Opportunity, Contact, CallLog, etc.)
+│   │   ├── models.py          # SQLAlchemy models
 │   │   ├── tasks.py           # SLA background monitoring & notifications
 │   │   └── commands.py        # CLI helpers
-│   ├── run.py                 # Application entry point
-│   ├── reset_db.py            # Database reset & seed script
-│   └── requirements.txt       # Python dependencies
+│   └── requirements.txt       # (Pointer to root requirements)
+├── logs/                      # Auto-generated log files
+├── run.py                     # Application entry point
+├── reset_db.py                # Database reset & seed script
+├── requirements.txt           # Python dependencies
+├── passenger_wsgi.py          # cPanel entry point
+├── .htaccess                  # cPanel server configuration
 ├── DEPLOYMENT_CPANEL.md       # Production deployment guide for cPanel
+├── DEPLOYMENT_UBUNTU.md       # Production deployment guide for Ubuntu VPS
 ├── DEPLOYMENT_PYTHONANYWHERE.md # Production deployment guide for PythonAnywhere
 └── README.md
 ```
@@ -185,7 +190,6 @@ Real-Estate-CRM/
 
 2. **Set Up Python Environment**:
    ```bash
-   cd backend
    python -m venv venv
    # On Windows:
    .\venv\Scripts\activate
@@ -218,5 +222,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 **Developed with ❤️ by [pythonicshariful](https://github.com/pythonicshariful)**
-#   b o s o t i p o i n t _ c r m  
- 
+
+# bosotipoint_crm
