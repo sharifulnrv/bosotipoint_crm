@@ -1,0 +1,33 @@
+# =========================================================================
+# cPanel Passenger / WSGI Configuration
+# =========================================================================
+# NOTE: cPanel's "Setup Python App" tool usually generates the Passenger 
+# lines automatically. If you place this file in your domain's document 
+# root (e.g., public_html/office), make sure to update "yourusername" below.
+# =========================================================================
+
+# 1. Force HTTPS (Highly recommended for CRM security)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# 2. Tell Passenger where your Python App lives
+# Replace "yourusername" with your actual cPanel username
+# Replace "3.11" with your selected Python version
+<IfModule mod_passenger.c>
+    PassengerAppRoot /home/yourusername/repositories/Real-Estate-CRM
+    PassengerBaseURI /
+    PassengerPython /home/yourusername/virtualenv/repositories/Real-Estate-CRM/3.11/bin/python
+</IfModule>
+
+# 3. Security: Block direct access to hidden files like .env
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# 4. Security: Block direct access to database files and logs
+<FilesMatch "(?i)\.(sqlite|db|log)$">
+    Require all denied
+</FilesMatch>

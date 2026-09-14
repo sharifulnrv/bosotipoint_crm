@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Southeast CRM</title>
+  <meta name="description" content="CRM dashboard for Southeast Landmark — live lead, pipeline, and activity data.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+
+  <div id="sidebar-container"></div>
+
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+
+    <!-- Topbar -->
+    <header class="glass-dark border-b border-slate-800/60 min-h-14 py-2 md:py-0 flex items-center justify-between px-4 md:px-6 z-10 flex-shrink-0 flex-wrap gap-2">
+      <div>
+        <div class="text-sm font-bold text-white">Dashboard Overview</div>
+        <div class="text-xs text-slate-500" id="dashboard-date">Loading...</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5" onclick="window.location.reload()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+      <!-- ROW 1: 6 KPI Cards (all real) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Today's Leads</div>
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-white" id="kpi-new-today">—</div>
+          <div class="text-[10px] text-slate-500 mt-1">Assigned to you today</div>
+        </div>
+
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Leads</div>
+            <div class="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-violet-400" id="kpi-total-leads">—</div>
+          <div class="text-[10px] text-slate-500 mt-1" id="kpi-active-sub">— active</div>
+        </div>
+
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">SLA Overdue</div>
+            <div class="w-7 h-7 rounded-lg bg-rose-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-rose-400" id="kpi-overdue">—</div>
+          <div class="text-[10px] text-rose-400 mt-1">Need immediate action</div>
+        </div>
+
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Closed Won</div>
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-emerald-400" id="kpi-closed-won">—</div>
+          <div class="text-[10px] text-emerald-400 mt-1">Total sold</div>
+        </div>
+
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Contact Rate</div>
+            <div class="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-cyan-400" id="kpi-contact-rate">—</div>
+          <div class="text-[10px] text-slate-500 mt-1" id="kpi-calls-sub">— calls today</div>
+        </div>
+
+        <div class="kpi-card col-span-1">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Appts Today</div>
+            <div class="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value text-amber-400" id="kpi-appts">—</div>
+          <div class="text-[10px] text-slate-500 mt-1">Scheduled for today</div>
+        </div>
+
+      </div>
+
+      <!-- ROW 2: Pipeline Bar + Lead Source Doughnut -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+        <div class="chart-card lg:col-span-7">
+          <div class="chart-title">Pipeline Stage Distribution</div>
+          <div class="chart-subtitle">Live lead count per stage</div>
+          <canvas id="pipelineBar" height="200"></canvas>
+        </div>
+
+        <div class="chart-card lg:col-span-5 flex flex-col">
+          <div class="chart-title">Lead Sources</div>
+          <div class="chart-subtitle">Where your leads come from</div>
+          <div class="flex-1 flex items-center justify-center">
+            <canvas id="sourceDoughnut" height="200"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 3: SLA Overdue Alerts + Recent Leads -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- SLA Overdue Alerts -->
+        <div class="chart-card">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="chart-title">⚠️ SLA Overdue Alerts</div>
+              <div class="chart-subtitle">Leads past their next-action deadline</div>
+            </div>
+            <span id="sla-badge" class="badge badge-overdue text-xs px-2 py-1 rounded-full hidden"></span>
+          </div>
+          <div class="space-y-2 max-h-64 overflow-y-auto" id="sla-alerts-list">
+            <p class="text-slate-500 text-xs text-center py-6">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Recent Leads Table -->
+        <div class="chart-card">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="chart-title">Recent Leads</div>
+              <div class="chart-subtitle">Latest leads assigned to you</div>
+            </div>
+            <a href="/leads.html" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">View all →</a>
+          </div>
+          <div id="recent-leads-wrap">
+            <p class="text-slate-500 text-xs text-center py-6">Loading…</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 4: Recent Call Activity -->
+      <div class="chart-card">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="chart-title">Recent Call Activity</div>
+            <div class="chart-subtitle">Your latest logged calls</div>
+          </div>
+        </div>
+        <div class="space-y-2 max-h-64 overflow-y-auto" id="activity-feed">
+          <p class="text-slate-500 text-xs text-center py-6">Loading…</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    // ── Helpers ──────────────────────────────────────────────────────
+    document.getElementById('dashboard-date').textContent =
+      new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.size = 11;
+
+    const token = () => localStorage.getItem('crm_token');
+    const api = async (url) => {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });
+      if (res.status === 401) { if (!localStorage.getItem('crm_token')) { window.location.href = '/index.html'; } return null; }
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      return res.json();
+    };
+
+    let pipelineChart = null, sourceChart = null;
+
+    // ── 1. KPI Stats ─────────────────────────────────────────────────
+    async function loadStats() {
+      const data = await api('/api/dashboard/stats');
+      if (!data) return;
+      document.getElementById('kpi-new-today').textContent   = data.new_today      ?? 0;
+      document.getElementById('kpi-total-leads').textContent = data.total_leads     ?? 0;
+      document.getElementById('kpi-active-sub').textContent  = `${data.active_leads ?? 0} active`;
+      document.getElementById('kpi-overdue').textContent     = data.overdue         ?? 0;
+      document.getElementById('kpi-closed-won').textContent  = data.closed_won      ?? 0;
+      document.getElementById('kpi-contact-rate').textContent= `${data.contact_rate ?? 0}%`;
+      document.getElementById('kpi-calls-sub').textContent   = `${data.calls_today  ?? 0} calls today`;
+      document.getElementById('kpi-appts').textContent       = data.appointments_today ?? 0;
+    }
+
+    // ── 2. Pipeline funnel chart ─────────────────────────────────────
+    async function loadPipeline() {
+      const data = await api('/api/dashboard/funnel');
+      if (!data || !data.funnel) return;
+
+      const STAGE_COLORS = {
+        NEW:         'rgba(99,102,241,0.75)',
+        CONTACTED:   'rgba(6,182,212,0.75)',
+        QUALIFIED:   'rgba(139,92,246,0.75)',
+        SITE_VISIT:  'rgba(245,158,11,0.75)',
+        PROPOSAL:    'rgba(59,130,246,0.75)',
+        NEGOTIATION: 'rgba(168,85,247,0.75)',
+        SOLD:        'rgba(16,185,129,0.75)',
+        CLOSED_LOST: 'rgba(239,68,68,0.75)',
+        INVALID:     'rgba(100,116,139,0.75)',
+      };
+      const STAGE_LABELS = {
+        NEW:'New', CONTACTED:'Contacted', QUALIFIED:'Qualified',
+        SITE_VISIT:'Site Visit', PROPOSAL:'Proposal', NEGOTIATION:'Negotiation',
+        SOLD:'Sold', CLOSED_LOST:'Lost', INVALID:'Invalid',
+      };
+
+      const labels  = data.funnel.map(f => STAGE_LABELS[f.stage] || f.stage);
+      const counts  = data.funnel.map(f => f.count);
+      const colors  = data.funnel.map(f => STAGE_COLORS[f.stage] || 'rgba(99,102,241,0.7)');
+
+      if (pipelineChart) pipelineChart.destroy();
+      pipelineChart = new Chart(document.getElementById('pipelineBar'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: 'Leads', data: counts, backgroundColor: colors, borderRadius: 6, borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' }, beginAtZero: true },
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // ── 3. Lead Source doughnut ──────────────────────────────────────
+    async function loadSourceChart() {
+      const items = await api('/api/leads/');
+      if (!items || !items.length) return;
+
+      const counts = {};
+      items.forEach(l => {
+        const src = l.lead_source || (l.contact && l.contact.source) || 'Unknown';
+        counts[src] = (counts[src] || 0) + 1;
+      });
+
+      const PALETTE = ['#6366f1','#06b6d4','#10b981','#f59e0b','#8b5cf6','#ef4444','#64748b'];
+      const labels = Object.keys(counts);
+      const values = Object.values(counts);
+      const bgColors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+
+      if (sourceChart) sourceChart.destroy();
+      sourceChart = new Chart(document.getElementById('sourceDoughnut'), {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data: values, backgroundColor: bgColors, borderWidth: 2, borderColor: '#0a0a14', hoverOffset: 6 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true, cutout: '68%',
+          plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 10 } } } }
+        }
+      });
+    }
+
+    // ── 4. SLA Overdue Alerts ────────────────────────────────────────
+    async function loadSlaOverdue() {
+      const list = await api('/api/dashboard/sla-overdue?limit=8');
+      const container = document.getElementById('sla-alerts-list');
+      const badge = document.getElementById('sla-badge');
+      if (!list) return;
+
+      if (!list.length) {
+        container.innerHTML = '<p class="text-emerald-400 text-xs text-center py-6">✓ No overdue leads — great work!</p>';
+        return;
+      }
+
+      badge.textContent = `${list.length} Overdue`;
+      badge.classList.remove('hidden');
+
+      const urgencyColor = (mins) => {
+        if (mins >= 30) return { bg: 'bg-rose-500/8 border-rose-500/20', text: 'text-rose-400', label: 'Critical' };
+        if (mins >= 15) return { bg: 'bg-amber-500/8 border-amber-500/20', text: 'text-amber-400', label: 'Warning' };
+        return { bg: 'bg-indigo-500/8 border-indigo-500/20', text: 'text-indigo-400', label: 'Pending' };
+      };
+
+      container.innerHTML = list.map(item => {
+        const c = urgencyColor(item.minutes_late);
+        const hrs = Math.floor(item.minutes_late / 60);
+        const mins = item.minutes_late % 60;
+        const late = hrs > 0 ? `${hrs}h ${mins}m late` : `${mins}m late`;
+        return `
+          <div class="flex items-center justify-between p-3 rounded-xl border ${c.bg}">
+            <div>
+              <div class="text-sm font-semibold text-white">${item.lead_name}</div>
+              <div class="text-xs text-slate-400">${item.phone} · ${item.source} · ${item.stage}</div>
+            </div>
+            <div class="text-right flex-shrink-0 ml-3">
+              <div class="text-sm font-bold ${c.text}">${late}</div>
+              <div class="text-[10px] ${c.text}">${c.label}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── 5. Recent Leads table ────────────────────────────────────────
+    async function loadRecentLeads() {
+      const items = await api('/api/leads/');
+      const wrap = document.getElementById('recent-leads-wrap');
+      if (!items || !items.length) {
+        wrap.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No leads yet. <a href="/leads.html" class="text-indigo-400">Add your first →</a></p>';
+        return;
+      }
+
+      const STAGE_BADGE = {
+        NEW: 'badge-new', CONTACTED: 'badge-active', QUALIFIED: 'badge-pending',
+        SITE_VISIT: 'badge-confirmed', PROPOSAL: 'badge-confirmed', NEGOTIATION: 'badge-pending',
+        SOLD: 'badge-won', CLOSED_LOST: 'badge-lost', INVALID: 'badge-overdue',
+      };
+      const STAGE_LABEL = {
+        NEW:'New', CONTACTED:'Contacted', QUALIFIED:'Qualified', SITE_VISIT:'Site Visit',
+        PROPOSAL:'Proposal', NEGOTIATION:'Negotiation', SOLD:'Closed', CLOSED_LOST:'Lost', INVALID:'Invalid',
+      };
+
+      const latest = items.slice(0, 6);
+      wrap.innerHTML = `
+        <div class="overflow-x-auto w-full">
+<table class="crm-table">
+          <thead><tr><th>Name</th><th>Phone</th><th>Source</th><th>Stage</th></tr></thead>
+          <tbody>
+            ${latest.map(l => {
+              const name  = (l.contact && l.contact.full_name) || l.contact_name || '—';
+              const phone = (l.contact && l.contact.phone)     || l.contact_phone || '—';
+              const src   = l.lead_source || (l.contact && l.contact.source) || '—';
+              const stage = l.pipeline_stage || '';
+              return `
+              <tr onclick="window.location.href='/leads.html'" class="cursor-pointer">
+                <td class="font-medium text-white">${name}</td>
+                <td>${phone}</td>
+                <td>${src}</td>
+                <td><span class="badge ${STAGE_BADGE[stage] || ''}">${STAGE_LABEL[stage] || stage}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+</div>`;
+    }
+
+    // ── 6. Recent Call Activity ──────────────────────────────────────
+    async function loadActivity() {
+      const activities = await api('/api/dashboard/recent-activity?limit=10');
+      const feed = document.getElementById('activity-feed');
+      if (!activities || !activities.length) {
+        feed.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">No call activity yet.</p>';
+        return;
+      }
+      feed.innerHTML = activities.map(a => {
+        const time = a.created_at
+          ? new Date(a.created_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
+          : '—';
+        const initials = (a.logged_by || '?').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        return `
+          <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/70 transition-colors">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 mt-0.5"
+                 style="background:${a.owner_color || '#6366f1'}">${initials}</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs text-white font-medium">
+                ${a.logged_by} <span class="text-slate-400 font-normal">logged a call on</span> ${a.lead_name}
+              </div>
+              ${a.notes ? `<div class="text-[10px] text-slate-500 mt-0.5 truncate">${a.notes}</div>` : ''}
+            </div>
+            <div class="text-[10px] text-slate-600 flex-shrink-0">${time}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Boot ─────────────────────────────────────────────────────────
+    (async () => {
+      if (!token()) { window.location.href = '/index.html'; return; }
+      await Promise.all([
+        loadStats(),
+        loadPipeline(),
+        loadSourceChart(),
+        loadSlaOverdue(),
+        loadRecentLeads(),
+        loadActivity(),
+      ]);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — Southeast CRM v2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <style>
+    /* Custom Scrollbar for Chat */
+    .chat-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-100 bg-[#0a0a14]">
+  <div id="sidebar-container"></div>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <!-- Mobile Topbar for Sidebar Toggle -->
+    <header class="md:hidden glass-dark border-b border-slate-800/60 h-14 px-4 flex items-center z-10 flex-shrink-0">
+      <div class="text-sm font-bold text-white">Messages</div>
+    </header>
+    
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <!-- Contacts List (Left Column / Top Row on Mobile) -->
+      <div class="w-full md:w-80 h-1/3 md:h-auto border-b md:border-b-0 md:border-r border-slate-800 flex flex-col flex-shrink-0 bg-slate-950/40">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center flex-shrink-0">
+          <div class="font-bold text-sm text-white">Active Members</div>
+          <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+        </div>
+        <div class="flex-1 overflow-y-auto chat-scroll" id="contacts-list">
+          <div class="text-center text-slate-500 py-10">Loading contacts...</div>
+        </div>
+      </div>
+      
+      <!-- Chat Interface (Right Column) -->
+      <div class="flex-1 flex flex-col bg-slate-900/10 overflow-hidden">
+        <!-- Chat Header -->
+        <div class="px-6 py-3.5 border-b border-slate-800/60 bg-slate-950/20 flex justify-between items-center flex-shrink-0">
+          <div id="chat-header-user" class="hidden flex items-center gap-3">
+            <img id="active-user-avatar" class="w-9 h-9 rounded-full object-cover border border-white/10" src="/assets/img/default-avatar.png">
+            <div>
+              <div class="font-bold text-white text-sm" id="active-user-name">Select Contact</div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span id="active-user-role">Role</span>
+                <span id="typing-indicator" class="hidden text-emerald-400 font-semibold italic animate-pulse ml-2">is typing...</span>
+              </div>
+            </div>
+          </div>
+          <div id="chat-header-empty" class="text-slate-400 text-sm font-semibold">No Conversation Active</div>
+        </div>
+        
+        <!-- Messages Window -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-4 chat-scroll flex flex-col" id="chat-messages-container">
+          <div class="flex flex-col items-center justify-center h-full text-slate-500">
+            <svg class="w-12 h-12 mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            <div class="text-sm font-semibold">Select a contact to start chatting</div>
+          </div>
+        </div>
+        
+        <!-- Chat Input Bar -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/20 flex-shrink-0 hidden" id="chat-input-container">
+          <form id="chat-form" class="flex gap-3">
+            <input type="text" id="chat-input" required placeholder="Type a message..." class="flex-1 input-glass px-4 py-2.5 rounded-xl text-sm" autocomplete="off">
+            <button type="submit" class="btn-gradient px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="/assets/js/sidebar.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+  
+  <script>
+    let activePartnerId = null;
+    let activePartnerName = "";
+    let activePartnerRole = "";
+    let activePartnerAvatar = "";
+    let allUsers = [];
+    let unreadCounts = {};
+    let myInfo = null;
+    let chatPollInterval = null;
+    let typingTimeout = null;
+    let isCurrentlyTyping = false;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await fetchMyProfile();
+      await fetchContacts();
+      
+      // Start global polling for contacts and unread badges
+      setInterval(async () => {
+        await fetchUnreadCounts();
+        renderContacts();
+      }, 30000);
+
+      document.getElementById('chat-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await sendChatMessage();
+      });
+
+      // Typing Indicator Listener
+      const chatInput = document.getElementById('chat-input');
+      chatInput.addEventListener('input', () => {
+        handleTypingState(true);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          handleTypingState(false);
+        }, 4000);
+      });
+    });
+
+    async function fetchMyProfile() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (res.ok) {
+          myInfo = await res.json();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function fetchContacts() {
+      try {
+        const res = await fetch('/api/team/members', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch team members');
+        const users = await res.json();
+        
+        const currentUserName = localStorage.getItem('crm_name');
+        allUsers = users; // allow users to send messages to themselves
+        
+        await fetchUnreadCounts();
+        renderContacts();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function fetchUnreadCounts() {
+      try {
+        const res = await fetch('/api/messages/unread-by-sender', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (res.ok) {
+          unreadCounts = await res.json();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function getAvatarUrl(avatarUrl, userName) {
+      if (avatarUrl && avatarUrl.trim() !== '') return avatarUrl;
+      return '/assets/img/default-avatar.png';
+    }
+
+    function renderContacts() {
+      const container = document.getElementById('contacts-list');
+      container.innerHTML = '';
+      
+      if (allUsers.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-500 py-10">No other team members found.</div>`;
+        return;
+      }
+      
+      allUsers.forEach(u => {
+        const isActive = activePartnerId === u.id;
+        const unreadNum = unreadCounts[u.id] || 0;
+        const avatarUrl = getAvatarUrl(u.avatar_url, u.full_name);
+        
+        const div = document.createElement('div');
+        div.className = `p-4 border-b border-slate-800/40 cursor-pointer transition-all flex items-center justify-between ${isActive ? 'bg-indigo-500/10 border-l-4 border-l-indigo-500' : 'hover:bg-white/5'}`;
+        div.onclick = () => selectContact(u.id, u.full_name, u.role, avatarUrl);
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img class="w-10 h-10 rounded-full object-cover border border-white/10" src="${avatarUrl}">
+            <div>
+              <div class="font-bold text-xs text-white">${u.full_name}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${u.role}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${unreadNum > 0 ? `<span class="bg-rose-500 text-white font-bold text-[10px] px-2 py-0.5 rounded-full animate-bounce">${unreadNum}</span>` : ''}
+            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function selectContact(id, name, role, avatarUrl) {
+      activePartnerId = id;
+      activePartnerName = name;
+      activePartnerRole = role;
+      activePartnerAvatar = avatarUrl;
+      
+      // Update UI components
+      document.getElementById('chat-header-empty').classList.add('hidden');
+      document.getElementById('chat-header-user').classList.remove('hidden');
+      document.getElementById('active-user-name').textContent = name;
+      document.getElementById('active-user-role').textContent = role;
+      document.getElementById('active-user-avatar').src = avatarUrl || '/assets/img/default-avatar.png';
+      document.getElementById('chat-input-container').classList.remove('hidden');
+      
+      await loadConversation();
+      
+      // Immediately clear unread count locally for instant UI response
+      if (unreadCounts[id]) {
+        unreadCounts[id] = 0;
+      }
+      renderContacts();
+      if (window.updateBadges) window.updateBadges();
+      
+      // Setup live polling for messages & typing status
+      if (chatPollInterval) clearInterval(chatPollInterval);
+      chatPollInterval = setInterval(async () => {
+        await loadConversation();
+        await pollTypingIndicator();
+      }, 10000);
+    }
+
+    async function handleTypingState(typing) {
+      if (!activePartnerId || isCurrentlyTyping === typing) return;
+      isCurrentlyTyping = typing;
+      try {
+        await fetch('/api/messages/typing', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify({ recipient_id: activePartnerId, is_typing: typing })
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function pollTypingIndicator() {
+      if (!activePartnerId) return;
+      try {
+        const res = await fetch(`/api/messages/typing-state?partner_id=${activePartnerId}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const indicator = document.getElementById('typing-indicator');
+          if (data.is_typing) {
+            indicator.classList.remove('hidden');
+          } else {
+            indicator.classList.add('hidden');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadConversation() {
+      if (!activePartnerId) return;
+      try {
+        const res = await fetch(`/api/messages/conversation/${activePartnerId}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch conversation');
+        const messages = await res.json();
+        renderMessages(messages);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('chat-messages-container');
+      const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+      
+      container.innerHTML = '';
+      
+      if (messages.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-500 py-10 my-auto">No messages. Say hello to ${activePartnerName}!</div>`;
+        return;
+      }
+      
+      messages.forEach(m => {
+        const isMe = m.sender_name !== activePartnerName;
+        const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let statusMark = '';
+        if (isMe) {
+          statusMark = m.is_read 
+            ? `<span class="text-cyan-400 font-bold ml-1" title="Seen">✓✓</span>` 
+            : `<span class="text-slate-500 font-semibold ml-1" title="Sent">✓</span>`;
+        }
+
+        const senderAvatar = isMe 
+          ? getAvatarUrl(myInfo?.avatar_url, myInfo?.full_name || 'Me')
+          : getAvatarUrl(activePartnerAvatar, activePartnerName);
+
+        const div = document.createElement('div');
+        div.className = `flex gap-2.5 items-end ${isMe ? 'justify-end' : 'justify-start'}`;
+        div.innerHTML = `
+          ${!isMe ? `<img class="w-8 h-8 rounded-full object-cover border border-white/5" src="${senderAvatar}">` : ''}
+          <div class="max-w-[70%] rounded-2xl px-4 py-2.5 text-sm ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-100 rounded-tl-none'}">
+            <div>${m.body}</div>
+            <div class="text-[9px] text-slate-400 mt-1 flex justify-end items-center">
+              <span>${timeStr}</span>
+              ${statusMark}
+            </div>
+          </div>
+          ${isMe ? `<img class="w-8 h-8 rounded-full object-cover border border-white/5" src="${senderAvatar}">` : ''}
+        `;
+        container.appendChild(div);
+      });
+      
+      // Auto scroll to bottom if user is close to bottom or new conversation loaded
+      if (wasAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const body = input.value.trim();
+      if (!body || !activePartnerId) return;
+      
+      // Reset typing state immediately upon sending
+      handleTypingState(false);
+      clearTimeout(typingTimeout);
+
+      const data = {
+        recipient_id: activePartnerId,
+        body: body
+      };
+      
+      input.value = '';
+      
+      try {
+        const res = await fetch('/api/messages/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('crm_token')}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!res.ok) throw new Error('Failed to send message');
+        
+        // Reload history and scroll down immediately
+        await loadConversation();
+        const container = document.getElementById('chat-messages-container');
+        container.scrollTop = container.scrollHeight;
+      } catch (err) {
+        if (window.showToast) window.showToast(err.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
